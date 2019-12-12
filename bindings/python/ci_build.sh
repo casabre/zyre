@@ -20,26 +20,40 @@ CONFIG_OPTS+=("--with-docs=no")
 CONFIG_OPTS+=("--quiet")
 
 # Clone and build dependencies
-git clone --quiet --depth 1 https://github.com/zeromq/libzmq libzmq
-cd libzmq
+git clone --depth 1 -b stable https://github.com/jedisct1/libsodium libsodium
+cd libsodium
 git --no-pager log --oneline -n1
-if [ -e autogen.sh ]; then
+if [[ -e autogen.sh ]]; then
     ./autogen.sh 2> /dev/null
 fi
-if [ -e buildconf ]; then
+if [[ -e buildconf ]]; then
     ./buildconf 2> /dev/null
 fi
-./configure "${CONFIG_OPTS[@]}"
 make -j4
 make install
 cd ..
+
+git clone --quiet --depth 1 https://github.com/zeromq/libzmq libzmq
+cd libzmq
+git --no-pager log --oneline -n1
+if [[ -e autogen.sh ]]; then
+    ./autogen.sh 2> /dev/null
+fi
+if [[ -e buildconf ]]; then
+    ./buildconf 2> /dev/null
+fi
+./configure "${CONFIG_OPTS[@]} --with-libsodium"
+make -j4
+make install
+cd ..
+
 git clone --quiet --depth 1 https://github.com/zeromq/czmq czmq
 cd czmq
 git --no-pager log --oneline -n1
-if [ -e autogen.sh ]; then
+if [[ -e autogen.sh ]]; then
     ./autogen.sh 2> /dev/null
 fi
-if [ -e buildconf ]; then
+if [[ -e buildconf ]]; then
     ./buildconf 2> /dev/null
 fi
 ./configure "${CONFIG_OPTS[@]}"
@@ -60,5 +74,6 @@ BASE_PWD=${PWD}
 cd ${BUILD_PREFIX}/lib
 
 # Setup environment & run tests
-LD_LIBRARY_PATH=$BUILD_PREFIX/lib python ${BASE_PWD}/bindings/python/test.py
-LD_LIBRARY_PATH=$BUILD_PREFIX/lib python3 ${BASE_PWD}/bindings/python/test.py
+LD_LIBRARY_PATH=${BUILD_PREFIX}/lib python ${BASE_PWD}/bindings/python/test.py
+LD_LIBRARY_PATH=${BUILD_PREFIX}/lib python3 ${BASE_PWD}/bindings/python/test.py
+
